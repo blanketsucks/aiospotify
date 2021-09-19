@@ -2,7 +2,8 @@ from enum import Enum
 
 __all__ = (
     'ObjectType',
-    'AlbumType'
+    'AlbumType',
+    'MediaType'
 )
 
 class ObjectType(Enum):
@@ -11,9 +12,13 @@ class ObjectType(Enum):
     TRACK = 'track'
     PLAYLIST = 'playlist'
     ARTIST = 'artist'
-    GENRE = 'genre'
+    EPISODE = 'episode'
+    SHOW = 'show'
 
 class AlbumType(Enum):
     ALBUM = 'album'
     SINGLE = 'single'
     COMPOSITION = 'compilation'
+
+class MediaType(Enum):
+    AUDIO = 'audio'

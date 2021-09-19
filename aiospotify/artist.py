@@ -6,7 +6,7 @@ from .objects import Followers
 from .partials import PartialArtist
 
 __all__ = (
-    'Artist'
+    'Artist',
 )
 
 class Artist(PartialArtist):

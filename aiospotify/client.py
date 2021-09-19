@@ -1,21 +1,38 @@
-from typing import List, Union
+import asyncio
+from typing import List, Optional, Union
 from urllib.parse import urlparse
 
-from .http import HTTPClient
+import aiohttp
 
+from .http import HTTPClient
 from .user import CurrentUser, User
 from .track import Track
 from .state import CacheState
 from .enums import ObjectType
 from .search import SearchResult
+from .playlist import Playlist
 
 __all__ = (
     'SpotifyClient',
 )
 
 class SpotifyClient:
-    def __init__(self, client_id: Union[str, int], client_secret: str, **kwargs) -> None:
-        self.http = HTTPClient(client_id, client_secret, **kwargs)
+    def __init__(
+        self, 
+        client_id: str, 
+        client_secret: str, 
+        *,
+        loop: asyncio.AbstractEventLoop=None,
+        session: aiohttp.ClientSession=None,
+        oauth2: bool=True
+    ) -> None:
+        self.http = HTTPClient(
+            client_id=client_id, 
+            client_secret=client_secret, 
+            loop=loop,
+            session=session,
+            oauth2=oauth2
+        )
         self._state = CacheState(self)
 
     async def __aenter__(self):
@@ -24,13 +41,16 @@ class SpotifyClient:
     async def __aexit__(self, *args):
         await self.close()
 
-    def build_oauth_url(self, scopes: List[str]=None):
+    def build_oauth_url(self, scopes: List[str]=None) -> Optional[str]:
+        if not self.http.client_id:
+            return None
+
         url = self.http.auth.build_oauth_url(scopes)
         return url
 
     @classmethod
     def from_token(cls, token: str, **kwargs) -> 'SpotifyClient':
-        self = cls(None, None, **kwargs)
+        self = cls(None, None, oauth2=False)
         self.http.auth.token = token
 
         return self
@@ -130,6 +150,10 @@ class SpotifyClient:
     async def fetch_playlist(self, uri: str):
         id = self.verify_argument(uri, 'playlist')
         data = await self.http.get_playlist(id)
+
+        return self._state.add_playlist(
+            playlist=Playlist(data, self._state)
+        )
 
     async def close(self):
         await self.http.session.close()

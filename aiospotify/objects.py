@@ -25,5 +25,6 @@ class ExternalIDs(NamedTuple):
     upc: str
 
 class Object:
-    def __init__(self, id: Union[str, int]) -> None:
+    def __init__(self, id: str, type: str) -> None:
         self.id = id
+        self.uri = f'spotify:{type}:{id}'

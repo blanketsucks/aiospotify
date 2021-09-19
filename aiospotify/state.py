@@ -7,12 +7,16 @@ if TYPE_CHECKING:
         PartialAlbum,
         PartialArtist,
         PartialTrack,
+        PartialShow,
+        PartialEpisode
     )
     from .user import User
     from .track import Track
     from .album import Album
     from .artist import Artist
     from .playlist import Playlist, PlaylistTrack
+    from .show import Show
+    from .episode import Episode
 
     from .client import SpotifyClient
 
@@ -26,6 +30,10 @@ class CacheState:
         self._artists: Dict[str, Union[PartialArtist, Artist]] = {}
         self._playlists: Dict[str, Playlist] = {}
         self._users: Dict[str, User] = {}
+        self._shows: Dict[str, Union[PartialShow, Show]] = {}
+        self._episodes: Dict[str, Union[PartialEpisode, Episode]] = {}
+
+        self.user = None
 
     def get_track(self, track_id: str) -> Optional[Union[PartialTrack, Track, PlaylistTrack]]:
         return self._tracks.get(track_id)
@@ -71,7 +79,7 @@ class CacheState:
         return artist
 
     def add_playlist(self, playlist: Playlist):
-        self._playlists[playlist.id] = playlist
+        self._playlists[playlist.snapshot_id] = playlist
         return playlist
 
     def add_user(self, user: User):

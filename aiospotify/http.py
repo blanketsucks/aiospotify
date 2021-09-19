@@ -4,10 +4,11 @@ import asyncio
 import urllib.parse
 import base64
 import datetime
+import json
 from aiohttp import web
 
 from .errors import Forbidden, HTTPException, NotFound, Unauthorized, BadRequest
-
+    
 class Authentication:
     URL = 'https://accounts.spotify.com/api/token'
     def __init__(self, client_id: Union[str, int], client_secret: str, session: aiohttp.ClientSession) -> None:
@@ -16,6 +17,7 @@ class Authentication:
         self.session = session
 
         self.expires_at: Optional[datetime.datetime] = None
+        self._refresh_token = None
         self.token = None
 
     def build_oauth_url(self, scopes: List[str]=None):
@@ -40,6 +42,12 @@ class Authentication:
         return token
 
     async def get_token(self):
+        if self.is_expired():
+            if self.is_oauth2():
+                await self.refresh_token()
+            else:
+                await self.fetch_token()
+
         if self.token:
             return self.token
 
@@ -56,10 +64,19 @@ class Authentication:
         }
 
         async with self.session.request('POST', self.URL, headers=headers, data=data) as response:
-            json = await response.json()
-            self.token = json['access_token']
+            data = await response.json()
+            self.update(data)
 
         return self.token
+
+    def is_expired(self):
+        if not self.expires_at:
+            return False
+
+        return datetime.datetime.utcnow() > self.expires_at
+
+    def is_oauth2(self):
+        return self._refresh_token is not None
 
     async def refresh_token(self):
         data = {
@@ -69,6 +86,14 @@ class Authentication:
 
         async with self.session.request('POST', self.URL, data=data) as response:
             data = await response.json()
+            self.update(data)
+        
+        return self.token
+
+    def update(self, data: Dict[str, Any]):
+        self.expires_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=data['expires_in'])
+        self.token = data['access_token']
+        self._refresh_token = data.get('refresh_token')
 
 class OAuth2Server:
     def __init__(self, loop: asyncio.AbstractEventLoop, auth: Authentication) -> None:
@@ -110,7 +135,7 @@ class OAuth2Server:
 
         async with self.auth.session.request('POST', self.auth.URL, headers=headers, data=payload) as response:
             data = await response.json()
-            self.auth.token = data['access_token']
+            self.auth.update(data)
 
         return self.auth.token
 
@@ -130,7 +155,8 @@ class HTTPClient:
         client_secret: str, 
         *, 
         loop: asyncio.AbstractEventLoop=None, 
-        session: aiohttp.ClientSession=None
+        session: aiohttp.ClientSession=None,
+        oauth2: bool=True
     ) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
@@ -147,8 +173,9 @@ class HTTPClient:
             400: BadRequest
         }
 
-        self.server = OAuth2Server(self.loop, self.auth)
-        self.loop.create_task(self.server.wait())
+        if oauth2:
+            self.server = OAuth2Server(self.loop, self.auth)
+            self.loop.create_task(self.server.wait())
 
     async def read(self, url: str):
         async with self.session.get(url) as response:
@@ -162,7 +189,11 @@ class HTTPClient:
         if lock is None:
             self.locks[bucket] = lock = asyncio.Lock()
 
-        url = self.URL + path
+        if not kwargs.pop('is_full_url', False):
+            url = self.URL + path
+        else:
+            url = path
+
         headers = {
             'Authorization': 'Bearer ' + token
         }
@@ -171,7 +202,7 @@ class HTTPClient:
             for retry in range(3):
 
                 async with self.session.request(method, url, headers=headers, **kwargs) as response:
-                    data = await response.json()
+                    data = await response.json(encoding='utf-8')
 
                     if 300 > response.status >= 200:
                         return data
@@ -182,10 +213,14 @@ class HTTPClient:
 
                         continue
 
+                    if response.status in (500, 503, 503):
+                        await asyncio.sleep(retry * 2)
+                        continue
+
                     error = self.errors.get(response.status, HTTPException)
                     raise error(data)
 
-        raise RuntimeError('Could not complete the request for some unknow reasons')
+        raise RuntimeError('Could not complete the request for some unknown reason')
 
     async def search(self, query: str, type: str, market: str=None, limit: int=20, offset: int=0):
         params = {
@@ -952,7 +987,13 @@ class HTTPClient:
 
         return await self.request(f'/users/{user_id}/playlists', 'POST', json=data)
         
-    async def get_playlist(self, id: str, market: str=None, fields: List[str]=None, additional_types: List[str]=None):
+    async def get_playlist(
+        self, 
+        id: str, 
+        market: str=None, 
+        fields: List[str]=None, 
+        additional_types: List[str]=None
+    ):
         additional_types = ','.join(additional_types or ['track'])
         params = {
             'additional_types': additional_types
@@ -964,3 +1005,76 @@ class HTTPClient:
             params['fields'] = ','.join(fields)
 
         return await self.request(f'/playlists/{id}', 'GET', params=params)
+
+    async def change_playlist_details(
+        self, 
+        id: str, 
+        name: str=None, 
+        public: bool=None, 
+        collaborative: bool=None, 
+        description: bool=None
+    ):
+        data = {}
+
+        if name:
+            data['name'] = name
+        if public is not None:
+            data['public'] = public
+        if collaborative is not None:
+            data['collaborative'] = collaborative
+        if description:
+            data['description'] = description
+
+        return await self.request(f'/playlists/{id}', 'PUT', json=data)
+
+    async def get_playlist_items(
+        self,
+        id: str,
+        limit: int=20,
+        offset: int=0,
+        market: str=None, 
+        fields: List[str]=None, 
+        additional_types: List[str]=None
+    ):
+        additional_types = ','.join(additional_types or ['track'])
+        params = {
+            'additional_types': additional_types,
+            'limit': limit,
+            'offset': offset
+        }
+
+        if market:
+            params['market'] = market
+        if fields:
+            params['fields'] = ','.join(fields)
+
+        return await self.request(f'/playlists/{id}/tracks', 'GET', params=params)
+
+    async def add_items_to_playlist(
+        self,
+        id: str,
+        position: int=None,
+        uris: List[str]=None,
+    ):
+        params = {}
+
+        if position:
+            params['position'] = position
+        if uris:
+            params['uris'] = ','.join(uris)
+
+        return await self.request(f'/playlists/{id}/tracks', 'POST', params=params)
+
+    async def remove_items_from_playlist(
+        self,
+        id: str,
+        tracks: List[Dict[str, Any]]=None
+    ):
+        data = {}
+        if tracks:
+            data['tracks'] = tracks
+
+        return await self.request(f'/playlists/{id}/tracks', 'DELETE', json=data)
+
+
+        

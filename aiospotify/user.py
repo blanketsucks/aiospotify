@@ -3,25 +3,21 @@ from typing import Any, Dict, List
 
 from .objects import Followers, ExternalURLs
 from .image import Image
-from .enums import ObjectType
 from .track import UserTrack, Track
 from .state import CacheState
 from .album import Album
+from .partials import PartialUser
 
 __all__ = (
     'User',
     'CurrentUser'
 )
 
-class User:
+class User(PartialUser):
     def __init__(self, data: Dict[str, Any], state: CacheState) -> None:
-        self._data = data
+        super().__init__(data)
         self._state = state
-        self.href: str = data['href']
-        self.id: str = data['id']
-        self.type = ObjectType(data['type'])
         self.display_name: str = data['display_name']
-        self.uri: str = data['uri']
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} display_name={self.display_name!r} id={self.id!r} uri={self.uri!r}>'
