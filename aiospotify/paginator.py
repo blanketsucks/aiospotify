@@ -45,7 +45,7 @@ class Paginator(Generic[T]):
         return len(self.results)
 
     async def all(self) -> List[T]:
-        return [*[item async for result in self for item in result]]
+        return [item async for items in self for item in items]
 
     async def next(self) -> List[T]:
         if self.offset >= self.max:
