@@ -30,6 +30,9 @@ class Paginator(Generic[T]):
         *args,
         **kwargs,
     ) -> None:
+        if 0 < increment <= 100:
+            raise ValueError('increment value must be between 1 and 100')
+
         self.results: List[T] = []
         self.offset = 0
         self.callback = callback
@@ -43,6 +46,9 @@ class Paginator(Generic[T]):
 
     def __len__(self):
         return len(self.results)
+
+    def __await__(self):
+        return self.all().__await__()
 
     async def all(self) -> List[T]:
         return [item async for items in self for item in items]
@@ -64,10 +70,6 @@ class Paginator(Generic[T]):
 
         self.results.extend(items)
         return items
-
-    def previous(self) -> List[T]:
-        self.offset -= self.increment
-        return self.results[-self.increment:]
 
     def __aiter__(self):
         return self

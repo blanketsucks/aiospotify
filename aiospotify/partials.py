@@ -20,6 +20,9 @@ class ReleaseDate:
         self.date: str = data['release_date']
         self.precision: str = data['release_date_precision'] 
 
+    def __repr__(self) -> str:
+        return '<ReleaseDate date={0.date!r} precision={0.precision!r}>'.format(self)
+
 class PartialEpisode:
     def __init__(self, data: Dict[str, Any], state: CacheState) -> None:
         self._data = data
@@ -35,6 +38,9 @@ class PartialEpisode:
         self.language: str = data['language']
         self.type = ObjectType(data['type'])
         self.uri: str = data['uri']
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} name={self.name!r} id={self.id!r} uri={self.uri!r}>'
 
     @property
     def release_date(self):
@@ -66,6 +72,9 @@ class PartialShow:
         self.type = ObjectType(data['type'])
         self.publisher: str = data['publisher']
         self.uri: str = data['uri']
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} name={self.name!r} id={self.id!r} uri={self.uri!r}>'
     
     @property
     def images(self) -> List[Image]:

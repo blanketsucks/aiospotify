@@ -33,38 +33,33 @@ class CacheState:
         self._shows: Dict[str, Union[PartialShow, Show]] = {}
         self._episodes: Dict[str, Union[PartialEpisode, Episode]] = {}
 
-        self.user = None
+    def get_track(self, uri: str) -> Optional[Union[PartialTrack, Track, PlaylistTrack]]:
+        id = self.client.parse_argument(uri)
+        return self._tracks.get(id)
 
-    def get_track(self, track_id: str) -> Optional[Union[PartialTrack, Track, PlaylistTrack]]:
-        return self._tracks.get(track_id)
+    def get_album(self, uri: str) -> Optional[Union[PartialAlbum, Album]]:
+        id = self.client.parse_argument(uri)
+        return self._albums.get(id)
 
-    def get_album(self, album_id: str) -> Optional[Union[PartialAlbum, Album]]:
-        return self._albums.get(album_id)
+    def get_artist(self, uri: str) -> Optional[Union[PartialArtist, Artist]]:
+        id = self.client.parse_argument(uri)
+        return self._artists.get(id)
 
-    def get_artist(self, artist_id: str) -> Optional[Union[PartialArtist, Artist]]:
-        return self._artists.get(artist_id)
+    def get_playlist(self, uri: str) -> Optional[Playlist]:
+        id = self.client.parse_argument(uri)
+        return self._playlists.get(id)
 
-    def get_playlist(self, playlist_id: str) -> Optional[Playlist]:
-        return self._playlists.get(playlist_id)
+    def get_user(self, uri: str) -> Optional[User]:
+        id = self.client.parse_argument(uri)
+        return self._users.get(id)
 
-    def get_user(self, user_id: str) -> Optional[User]:
-        return self._users.get(user_id)
-
-    def get_playlist_from_uri(self, uri: str):
-        id = self.client.verify_argument(uri, 'playlist')
-        return self.get_playlist(id)
-
-    def get_track_from_uri(self, uri: str):
-        id = self.client.verify_argument(uri, 'track')
-        return self.get_track(id)
-
-    def get_album_from_uri(self, uri: str):
-        id = self.client.verify_argument(uri, 'album')
-        return self.get_album(id)
+    def get_show(self, uri: str) -> Optional[Union[PartialShow, Show]]:
+        id = self.client.parse_argument(uri)
+        return self._shows.get(id)
     
-    def get_user_from_uri(self, uri: str):
-        id = self.client.verify_argument(uri, 'user')
-        return self.get_user(id)
+    def get_episode(self, uri: str) -> Optional[Union[PartialEpisode, Episode]]:
+        id = self.client.parse_argument(uri)
+        return self._episodes.get(id)
 
     def add_track(self, track: Union[PartialTrack, Track, PlaylistTrack]):
         self._tracks[track.id] = track
@@ -85,3 +80,11 @@ class CacheState:
     def add_user(self, user: User):
         self._users[user.id] = user
         return user
+
+    def add_show(self, show: Union[PartialShow, Show]):
+        self._shows[show.id] = show
+        return show
+
+    def add_episode(self, episode: Union[PartialEpisode, Episode]):
+        self._episodes[episode.id] = episode
+        return episode

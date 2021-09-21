@@ -1,0 +1,32 @@
+site_name: aiospotify
+site_url: 'http://localhost:8000'
+
+repo_name: blanketsucks/aiospotify
+repo_url: https://github.com/blanketsucks/aiospotify
+
+theme:
+  name: "material"
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - API Reference:
+    - Client: API-Reference/client.md
+
+plugins:
+- search
+- mkdocstrings
+
+markdown_extensions:
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - admonition

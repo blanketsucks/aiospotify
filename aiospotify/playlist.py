@@ -2,11 +2,10 @@ from typing import Dict, Any, List, Optional, Union
 
 from .image import Image
 from .objects import Followers, ExternalURLs
-from .user import PartialUser
 from .track import Track
 from .state import CacheState
 from .objects import Object
-from .partials import PartialTrack
+from .partials import PartialTrack, PartialUser
 
 __all__ = ('PlaylistTrack', 'Playlist')
 
@@ -30,6 +29,12 @@ class Playlist:
         self.name: str = data['name']
         self.public: bool = data['public']
         self.snapshot_id: str = data['snapshot_id']
+
+    async def update(self, *args):
+        data = await self._state.http.get_playlist(self.id, *args)
+        self.__init__(data, self._state)
+
+        return self
 
     async def read(
         self, 
@@ -126,14 +131,8 @@ class Playlist:
         ]
 
     def get_track(self, uri: str) -> Optional[PlaylistTrack]:
-        if (track := self._state.get_track(uri)) is not None:
-            if getattr(track, 'playlist', None) == self:
-                return track
+        track = self._state.get_track(uri)
+        if getattr(track, 'playlist', None):
+            return track
 
-            return None
-
-        if (track := self._state.get_track_from_uri(uri)) is not None:
-            if getattr(track, 'playlist', None) == self:
-                return track
-
-            return None
+        return None

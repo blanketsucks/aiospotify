@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING  
 import aiohttp
 import asyncio
 import urllib.parse
@@ -8,6 +8,9 @@ import json
 from aiohttp import web
 
 from .errors import Forbidden, HTTPException, NotFound, Unauthorized, BadRequest
+
+if TYPE_CHECKING:
+    from .state import CacheState
     
 class Authentication:
     URL = 'https://accounts.spotify.com/api/token'
@@ -152,7 +155,7 @@ class HTTPClient:
     def __init__(
         self, 
         client_id: Union[str, int], 
-        client_secret: str, 
+        client_secret: str,
         *, 
         loop: asyncio.AbstractEventLoop=None, 
         session: aiohttp.ClientSession=None,
@@ -160,11 +163,9 @@ class HTTPClient:
     ) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
-
         self.loop = loop or asyncio.get_event_loop()
         self.session = session or aiohttp.ClientSession(loop=self.loop)
         self.locks: Dict[str, asyncio.Lock] = {}
-
         self.auth = Authentication(client_id, client_secret, self.session)
         self.errors = {
             401: Unauthorized,
@@ -1076,5 +1077,5 @@ class HTTPClient:
 
         return await self.request(f'/playlists/{id}/tracks', 'DELETE', json=data)
 
-
-        
+    async def get_playlist_cover_image(self, id: str):
+        return await self.request(f'/playlists/{id}/images', 'GET')

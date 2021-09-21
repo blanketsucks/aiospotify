@@ -7,6 +7,7 @@ from .track import UserTrack, Track
 from .state import CacheState
 from .album import Album
 from .partials import PartialUser
+from .playlist import Playlist
 
 __all__ = (
     'User',
@@ -21,6 +22,24 @@ class User(PartialUser):
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} display_name={self.display_name!r} id={self.id!r} uri={self.uri!r}>'
+
+    async def create_playlist(
+        self, 
+        name: str,
+        *,
+        description: str=None,
+        public: bool=True,
+        collaborative: bool=False
+    ):
+        data = await self._state.http.create_playlist(
+            user_id=self.id,
+            name=name,
+            public=public,
+            collaborative=collaborative,
+            description=description
+        )
+
+        return Playlist(data, self._state)
 
     @property
     def external_urls(self):
