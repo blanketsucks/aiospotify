@@ -25,12 +25,12 @@ class Paginator(Generic[T]):
 
     def __init__(self, 
         callback: Callable[..., Coroutine[Any, Any, List[T]]], 
-        increment: int=50,
-        max: int=200,
-        *args,
-        **kwargs,
+        increment: int = 50,
+        max: int = 200,
+        *args: Any,
+        **kwargs: Any,
     ) -> None:
-        if 0 < increment <= 100:
+        if 0 > increment <= 100:
             raise ValueError('increment value must be between 1 and 100')
 
         self.results: List[T] = []

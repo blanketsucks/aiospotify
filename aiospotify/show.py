@@ -1,27 +1,31 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
-from .state import CacheState
+from .http import HTTPClient
 from .episode import Episode
 from .partials import PartialShow, PartialEpisode
 
+__all__ = ('Show',)
+
 class Show(PartialShow):
-    def __init__(self, data: Dict[str, Any], state: CacheState) -> None:
-        super().__init__(data, state)
+    def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
+        super().__init__(data, http)
 
-        self.episodes: List[PartialEpisode] = [
-            PartialEpisode(episode, state)
-            for episode in data['episodes']['items']
-        ]
+    @property
+    def episodes(self) -> List[PartialEpisode]:
+        return [PartialEpisode(item, self._http) for item in self._data['episodes']['items']]
 
-    async def fetch_episodes(self, *, market: str=None, limit: int=20, offset: int=0) -> List[Episode]:
-        data = await self._state.http.get_show_episodes(
+    async def fetch_episodes(
+        self, 
+        *, 
+        market: Optional[str] = None, 
+        limit: int = 20,
+        offset: int = 0
+    ) -> List[Episode]:
+        data = await self._http.get_show_episodes(
             id=self.id,
             market=market,
             limit=limit,
             offset=offset
         )
 
-        return [
-            self._state.add_episode(Episode(item, self._state))
-            for item in data['items']
-        ]
+        return [Episode(item, self._http) for item in data['items']]

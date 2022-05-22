@@ -11,3 +11,4 @@ from .search import *
 from .track import *
 from .user import *
 from .paginator import *
+from .playback import *

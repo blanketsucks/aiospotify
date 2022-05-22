@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from .state import CacheState
+from .http import HTTPClient
 from .objects import Copyright, ExternalIDs
 from .partials import PartialAlbum, PartialTrack
 
@@ -9,8 +9,8 @@ __all__ = (
 )
 
 class Album(PartialAlbum):
-    def __init__(self, data: Dict[str, Any], state: CacheState):
-        super().__init__(data, state)
+    def __init__(self, data: Dict[str, Any], http: HTTPClient):
+        super().__init__(data, http)
 
         self.popularity: int = data['popularity']
 
@@ -30,9 +30,9 @@ class Album(PartialAlbum):
             for data in self._data['copyrights']
         ]
 
+    @property
     def tracks(self) -> List[PartialTrack]:
-        tracks = self._data['tracks']['items']
-        return [
-            self._state.add_track(PartialTrack(data))
-            for data in tracks
-        ]
+        tracks = self._data.get('tracks', {})
+        items = tracks.get('items', [])
+
+        return [PartialTrack(track) for track in items]

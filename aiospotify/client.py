@@ -1,13 +1,15 @@
-import asyncio
-from typing import List, Optional, Union
-from urllib.parse import urlparse
+from __future__ import annotations
 
+from typing import List, Optional, Tuple, Union
+from urllib.parse import urlparse
+import asyncio
 import aiohttp
+import sys
+import re
 
 from .http import HTTPClient
 from .user import CurrentUser, User
 from .track import Track
-from .state import CacheState
 from .enums import ObjectType
 from .search import SearchResult
 from .playlist import Playlist
@@ -17,41 +19,41 @@ __all__ = (
     'SpotifyClient',
 )
 
+PY310 = sys.version_info >= (3, 10)
+
+SPOTIFY_URL_REGEX = re.compile(r'https:\/\/(open.spotify.com|play.spotify.com)\/(?P<type>user|track|album|artist|playlist|show)\/(?P<id>\w*)')
+SPOTIFY_URI_REGEX = re.compile(r'^spotify:(?P<type>user|track|album|artist|playlist|show):(?P<id>.*)$')
+
+def get_event_loop(loop: Optional[asyncio.AbstractEventLoop] = None) -> asyncio.AbstractEventLoop:
+    if loop is not None:
+        if not isinstance(loop, asyncio.AbstractEventLoop):
+            raise TypeError('loop must be an instance of asyncio.AbstractEventLoop')
+
+        return loop
+
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        if not PY310:
+            return asyncio.get_event_loop()
+
+        raise
+
 class SpotifyClient:
-    """
-    A spotify client.
-    """
     def __init__(
         self, 
         client_id: str, 
         client_secret: str, 
         *,
-        loop: asyncio.AbstractEventLoop=None,
-        session: aiohttp.ClientSession=None,
-        oauth2: bool=True
+        loop: Optional[asyncio.AbstractEventLoop] = None,
+        session: Optional[aiohttp.ClientSession] =None,
     ) -> None:
-        """
-        SpotifyClient constructor
-        
-        Args:
-            client_id: Spotify application client id.
-            client_secret: Spotify application client secret.
-            loop: The asyncio event loop to use with the HTTP session.
-            session: The aiohttp session to use.
-            oauth2: Whether to use OAuth2 authentication. If set to True, this starts a server 
-                in the background waiting for a request to come in. The person performing that request 
-                should you doing it through the oauth2 url that you can get through the build_oauth_url method. 
-                After that it retreives the oauth2 token and uses it. If you set this to to True 
-                and you don't authenticate it will use the client credentials flow for operations in the meanwhile.
-        """
         self.http = HTTPClient(
             client_id=client_id, 
             client_secret=client_secret, 
-            loop=loop,
+            loop=get_event_loop(loop),
             session=session,
-            oauth2=oauth2
         )
-        self._state = CacheState(self)
 
     async def __aenter__(self):
         return self
@@ -59,217 +61,99 @@ class SpotifyClient:
     async def __aexit__(self, *args):
         await self.close()
 
-    def build_oauth_url(self, scopes: List[str]=None) -> Optional[str]:
-        """
-        Builds an oauth2 url. The redirect_uri is set to 'http://localhost:8080/callback'.
-
-        Args:
-            scopes: A list of scopes to request.
-        
-        """
-        if not self.http.client_id:
-            return None
-
-        url = self.http.auth.build_oauth_url(scopes)
-        return url
-
     @classmethod
-    def from_token(cls, token: str, **kwargs) -> 'SpotifyClient':
-        """
-        Creates a client from an access token.
-
-        Args:
-            token: The access token.
-            **kwargs: The keyword arguments to pass to the constructor.
-        """
-        kwargs.pop('oauth2', None)
-        self = cls(None, None, oauth2=False, **kwargs)
+    def from_token(cls, token: str, **kwargs) -> SpotifyClient:
+        self = cls(None, None, **kwargs) # type: ignore
 
         self.http.auth.token = token
         return self
     
     @property
     def loop(self):
-        """
-        Returns:
-            The event loop used by the client.
-        """
         return self.http.loop
 
-    def parse_url(self, url: str):
-        """
-        Parses the given URL into a tuple of type and id.
-
-        Args:
-            url: The URL to parse.
-
-        Raises:
-            ValueError: If the URL is not a valid Spotify URL.
-        """
-        parsed = urlparse(url)
-        if parsed.netloc == 'open.spotify.com':
-            split = parsed.path.split('/')
-            _, type, id = split
-
-            return type, id
+    def parse_url(self, url: str) -> Tuple[str, str]:
+        match = SPOTIFY_URL_REGEX.match(url)
+        if not match:
+            raise ValueError(f'{url!r} is not a valid spotify url')
     
-        raise ValueError('Not a valid Spotify URL')
+        return match.group('type'), match.group('id')
 
     def parse_uri(self, uri: str):
-        """
-        Parses the given URI into a tuple of type and id.
+        match = SPOTIFY_URI_REGEX.match(uri)
+        if not match:
+            raise ValueError(f'{uri!r} is not a valid spotify uri')
 
-        Args:
-            uri: The URI to parse.
+        return match.group('type'), match.group('id')
 
-        Raises:
-            ValueError: If the URI is not a valid Spotify URI.
-        """
-        split = uri.split(':')
-        if len(split) == 3:
-            _, type, id = split
-            return type, id
-
-        raise ValueError('Not a valid Spotify URI')
-
-    def parse_argument(self, argument: str):
-        """
-        Parses the given argument into a Spotify ID.
-        The main difference between this and [SpotifyClient.parse_url](./client.md#aiospotify.client.SpotifyClient.parse_url)
-        or [SpotifyClient.parse_urn](./client.md#aiospotify.client.SpotifyClient.parse_urn) is that
-        no matter what you pass in, it will never error, while this could be bad, if the returned value
-        is passed in into an API call that expects a Spotify ID it will error.
-        """
+    def parse_argument(self, argument: str, *, type: str) -> str:
         try:
-            return self.parse_uri(argument)[1]
+            typ, id = self.parse_uri(argument)
         except ValueError:
             try:
-                return self.parse_url(argument)[1]
+                typ, id = self.parse_url(argument)
             except ValueError:
                 return argument
 
-    def get_track(self, uri: str):
-        """
-        Gets a track from the cache.
+        if typ != type:
+            raise ValueError(f'{argument!r} is not a valid {type!r} uri')
 
-        Args:
-            uri: The Spotify URL/URI/ID of the track.
-        """
-        return self._state.get_track(uri)
-        
-    def get_playlist(self, uri: str):
-        """
-        Gets a playlist from the cache.
-
-        Args:
-            uri: The Spotify URL/URI/ID of the playlist.
-        """
-        return self._state.get_playlist(uri)
-
-    def get_user(self, uri: str):
-        """
-        Gets a user from the cache.
-
-        Args:
-            uri: The Spotify URL/URI/ID of the user.
-        """
-        return self._state.get_user(uri)
-
-    def get_artist(self, uri: str):
-        """
-        Gets an artist from the cache.
-
-        Args:
-            uri: The Spotify URL/URI/ID of the artist.
-        """
-        return self._state.get_artist(uri)
-
-    def get_album(self, uri: str):
-        return self._state.get_album(uri)
-
-    def get_show(self, uri: str):
-        return self._state.get_show(uri)
-
-    def get_episode(self, uri: str):
-        return self._state.get_episode(uri)
+        return id
 
     async def search(
         self, 
-        q: str, 
-        types: List[ObjectType]=None, 
+        query: str, 
         *, 
-        limit: int=20, 
-        offset: int=0, 
-        market: str=None
+        types: Optional[List[ObjectType]] = None, 
+        limit: int = 20, 
+        offset: int = 0, 
+        market: Optional[str] = None
     ) -> SearchResult:
-        values = types or [ObjectType.TRACK, ObjectType.ALBUM, ObjectType.ARTIST]
-        types = ','.join([type.value for type in values])
+        types = types or [ObjectType.TRACK, ObjectType.ALBUM, ObjectType.ARTIST]
+        values = ','.join([type.value for type in types])
 
-        data = await self.http.search(q, types, limit=limit, offset=offset, market=market)
-
-        return SearchResult(data, self._state)
+        data = await self.http.search(query, values, limit=limit, offset=offset, market=market)
+        return SearchResult(data, self.http)
         
     async def fetch_current_user(self) -> CurrentUser:
         data = await self.http.me()
-        return CurrentUser(data, self._state)
+        return CurrentUser(data, self.http)
 
-    async def fetch_tracks(self, uris: List[str], *, market: str=None) -> List[Track]:
-        ids = [
-            self.parse_argument(uri)
-            for uri in uris
-        ]
+    async def fetch_tracks(self, uris: List[str], *, market: Optional[str] = None) -> List[Track]:
+        ids = [self.parse_argument(uri, type='track') for uri in uris]
+        data = await self.http.get_tracks(ids=ids, market=market)
 
-        data = await self.http.get_tracks(
-            ids=ids,
-            market=market
-        )
+        return [Track(item, self.http) for item in data['tracks']]
 
-        return [
-            self._state.add_track(Track(item, self._state))
-            for item in data['items']
-        ]
-
-    async def fetch_track(self, uri: str, *, market: str=None) -> Track:
-        id = self.parse_argument(uri)
+    async def fetch_track(self, uri: str, *, market: Optional[str] = None) -> Track:
+        id = self.parse_argument(uri, type='track')
         data = await self.http.get_track(id, market=market)
 
-        return self._state.add_track(
-            track=Track(data, self._state)
-        )
+        return Track(data, self.http)
 
     async def fetch_user(self, uri: str):
-        id = self.parse_argument(uri)
-    
+        id = self.parse_argument(uri, type='user')
         data = await self.http.get_user(id)
-        return self._state.add_user(
-            user=User(data)
-        )
+
+        return User(data, self.http)
 
     async def fetch_playlist(self, uri: str):
-        id = self.parse_argument(uri)
+        id = self.parse_argument(uri, type='playlist')
         data = await self.http.get_playlist(id)
 
-        return self._state.add_playlist(
-            playlist=Playlist(data, self._state)
-        )
+        return Playlist(data, self.http)
 
-    async def fetch_shows(self, uris: List[str], *, market: str=None) -> List[Show]:
-        ids = [
-            self.parse_argument(uri)
-            for uri in uris
-        ]
+    async def fetch_shows(self, *uris: str, market: Optional[str] = None) -> List[Show]:
+        ids = [self.parse_argument(uri, type='show') for uri in uris]
 
         data = await self.http.get_shows(ids, market=market)
-        return [
-            self._state.add_show(Show(item, self._state))
-            for item in data['items']
-        ]
+        return [Show(item, self.http) for item in data['items']]
     
-    async def fetch_show(self, uri: str, *, market: str=None) -> Show:
-        id = self.parse_argument(uri)
+    async def fetch_show(self, uri: str, *, market: Optional[str] = None) -> Show:
+        id = self.parse_argument(uri, type='show')
         data = await self.http.get_show(id, market)
 
-        return self._state.add_show(Show(data, self._state))
+        return Show(data, self.http)
 
     async def close(self):
         await self.http.session.close()

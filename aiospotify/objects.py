@@ -1,4 +1,4 @@
-from typing import Union, NamedTuple, Optional
+from typing import NamedTuple, Optional, Protocol
 
 __all__ = (
     'Followers',
@@ -24,7 +24,5 @@ class ExternalIDs(NamedTuple):
     isrc: str
     upc: str
 
-class Object:
-    def __init__(self, id: str, type: str) -> None:
-        self.id = id
-        self.uri = f'spotify:{type}:{id}'
+class Object(Protocol):
+    uri: str

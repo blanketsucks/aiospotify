@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from typing import Dict, Any, List
 
+from .http import HTTPClient
 from .enums import AlbumType, ObjectType, MediaType
 from .image import Image
-from .state import CacheState
 from .objects import Copyright, ExternalURLs, ExternalIDs
 
 __all__ = (
@@ -24,9 +26,9 @@ class ReleaseDate:
         return '<ReleaseDate date={0.date!r} precision={0.precision!r}>'.format(self)
 
 class PartialEpisode:
-    def __init__(self, data: Dict[str, Any], state: CacheState) -> None:
+    def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         self._data = data
-        self._state = state
+        self._http = http
 
         self.audio_preview_url: str = data['audio_preview_url']
         self.description: str = data['description']
@@ -48,7 +50,7 @@ class PartialEpisode:
 
     @property
     def images(self) -> List[Image]:
-        return [Image(image, self._state.http) for image in self._data['images']]
+        return [Image(image, self._http) for image in self._data['images']]
 
     @property
     def external_urls(self) -> ExternalURLs:
@@ -56,9 +58,9 @@ class PartialEpisode:
         return ExternalURLs(spotify)
 
 class PartialShow:
-    def __init__(self, data: Dict[str, Any], state: CacheState) -> None:
+    def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         self._data = data
-        self._state = state
+        self._http = http
 
         self.available_markets: List[str] = data['available_markets']
         self.description: str = data['description']
@@ -78,7 +80,7 @@ class PartialShow:
     
     @property
     def images(self) -> List[Image]:
-        return [Image(image, self._state.http) for image in self._data['images']]
+        return [Image(image, self._http) for image in self._data['images']]
 
     @property
     def copyrights(self) -> List[Copyright]:
@@ -88,7 +90,7 @@ class PartialShow:
         ]
 
     @property
-    def external_ids(self) -> ExternalIDs:
+    def external_ids(self) -> ExternalURLs:
         spotify = self._data.get('external_urls', {}).get('spotify', None)
         return ExternalURLs(spotify)
     
@@ -120,6 +122,9 @@ class PartialTrack:
         self.track_number: int = data['track_number']
         self.type = ObjectType(data['type'])
         self.uri: str = data['uri']
+
+    def __repr__(self) -> str:
+        return f'<{self.__class__.__name__} name={self.name!r} id={self.id!r} uri={self.uri!r}>'
     
     @property
     def external_ids(self):
@@ -130,10 +135,8 @@ class PartialTrack:
             upc=ids.get('upc'),
         )
 
-    def __repr__(self) -> str:
-        return f'<{self.__class__.__name__} name={self.name!r} id={self.id!r} uri={self.uri!r}>'
-
-    def artists(self) -> List['PartialArtist']:
+    @property
+    def artists(self) -> List[PartialArtist]:
         artists = self._data.get('artists', [])
         return [PartialArtist(artist) for artist in artists]
 
@@ -155,8 +158,8 @@ class PartialArtist:
         return f'<{self.__class__.__name__} name={self.name!r} id={self.id!r} uri={self.uri!r}>'
 
 class PartialAlbum:
-    def __init__(self, data: Dict[str, Any], state: CacheState) -> None:
-        self._state = state
+    def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
+        self._http = http
         self._data = data
         self.album_type = AlbumType(data['album_type']) 
         self.type = ObjectType(data['type'])
@@ -164,6 +167,7 @@ class PartialAlbum:
         self.href: str = data['href']
         self.id: str = data['id']
         self.uri: str = data['uri']
+        self.name: str = data['name']
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} id={self.id!r} uri={self.uri!r}>'
@@ -179,13 +183,10 @@ class PartialAlbum:
 
     @property
     def images(self) -> List[Image]:
-        return [Image(image, self._state.http) for image in self._data['images']]
+        return [Image(image, self._http) for image in self._data['images']]
 
+    @property
     def artists(self) -> List[PartialArtist]:
-        data = self._data['artists']
-        return [
-            self._state.add_artist(PartialArtist(artist))
-            for artist in data
-        ]
+        return [PartialArtist(artist) for artist in self._data['artists']]
 
     

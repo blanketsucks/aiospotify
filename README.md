@@ -35,13 +35,10 @@ client_id = 'your-client-id'
 client_secret = 'your-client-secret'
 
 async def main():
-    client = aiospotify.SpotifyClient(client_id, client_secret, oauth2=False)
+    client = aiospotify.SpotifyClient(client_id, client_secret)
 
     async with client:
-        result = await client.search(
-            q='バイバイ YESTERDAY'
-        )
-
+        result = await client.search(query='バイバイ YESTERDAY')
         print(result.tracks)
 
 asyncio.run(main())

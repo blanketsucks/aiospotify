@@ -1,10 +1,15 @@
-from typing import Any, Dict
+from typing import Any, Dict, BinaryIO, Union
+import asyncio
+import os
 
 from .http import HTTPClient
 
 __all__ = (
     'Image',
 )
+
+async def _write(fd: BinaryIO, data: bytes) -> int:
+    return await asyncio.to_thread(fd.write, data)
 
 class Image:
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
@@ -22,3 +27,11 @@ class Image:
 
     async def read(self) -> bytes:
         return await self._http.read(self.url)
+
+    async def save(self, file: Union[str, os.PathLike[str], BinaryIO]) -> int:
+        data = await self.read()
+        if isinstance(file, (str, os.PathLike)):
+            with open(file, 'wb') as f:
+                return await _write(f, data)
+        
+        return await _write(file, data)
