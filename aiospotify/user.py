@@ -18,6 +18,7 @@ class User(PartialUser):
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         self._http = http
         super().__init__(data)
+        
         self.display_name: str = data['display_name']
 
     def __repr__(self) -> str:
@@ -47,8 +48,7 @@ class User(PartialUser):
 
     @property
     def external_urls(self):
-        spotify = self._data.get('external_urls', {}).get('spotify', None)
-        return ExternalURLs(spotify)
+        return ExternalURLs(self._data.get('external_urls', {}))
     
     @property
     def images(self) -> List[Image]:
@@ -56,10 +56,7 @@ class User(PartialUser):
 
     @property
     def followers(self):
-        return Followers(
-            href=self._data['followers']['href'],
-            total=self._data['followers']['total'],
-        )
+        return Followers(self._data['followers'])
 
 class CurrentUser(User):
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:

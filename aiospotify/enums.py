@@ -7,38 +7,38 @@ __all__ = (
 )
 
 class ObjectType(Enum):
-    USER = 'user'
-    ALBUM = 'album'
-    TRACK = 'track'
-    PLAYLIST = 'playlist'
-    ARTIST = 'artist'
-    EPISODE = 'episode'
+    User = 'user'
+    Album = 'album'
+    Track = 'track'
+    Playlist = 'playlist'
+    Artist = 'artist'
+    Episode = 'episode'
     SHOW = 'show'
 
 class AlbumType(Enum):
-    ALBUM = 'album'
-    SINGLE = 'single'
-    COMPOSITION = 'compilation'
+    Album = 'album'
+    Single = 'single'
+    Composition = 'compilation'
 
 class MediaType(Enum):
-    AUDIO = 'audio'
+    Audio = 'audio'
 
 class DeviceType(Enum):
-    COMPUTER = 'computer'
-    SMARTPHONE = 'smartphone'
-    SPEAKER = 'speaker'
+    Computer = 'computer'
+    Smartphone = 'smartphone'
+    Speaker = 'speaker'
 
 class CurrentPlayingType(Enum):
-    TRACK = 'track'
-    AD = 'ad'
-    EPISODE = 'episode'
-    UNKNOWN = 'unknown'
+    Track = 'track'
+    Ad = 'ad'
+    Episode = 'episode'
+    Unknown = 'unknown'
 
 class RepeatState(Enum):
-    OFF = 'off'
-    TRACK = 'track'
-    CONTEXT = 'context'
+    Off = 'off'
+    Track = 'track'
+    Context = 'context'
 
 class ShuffleState(Enum):
-    OFF = 'off'
-    ON = 'on'
+    Off = 'off'
+    On = 'on'

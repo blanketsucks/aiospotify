@@ -8,6 +8,7 @@ from .objects import Followers, ExternalURLs
 from .track import Track
 from .objects import Object
 from .partials import PartialUser
+from .paginator import Paginator
 
 __all__ = ('PlaylistTrack', 'Playlist')
 
@@ -17,6 +18,18 @@ class PlaylistTrack(Track):
         self.added_at = data['added_at']
         self.added_by = PartialUser(data['added_by'])
         self.is_local: bool = data['is_local']
+
+class PlaylistTracks:
+    def __init__(self, playlist: Playlist, data: Dict[str, Any]) -> None:
+        self.playlist = playlist
+        self.href: str = data['href']
+        self.total: int = data['total']
+
+    def __repr__(self) -> str:
+        return f'<PlaylistTracks href={self.href!r} total={self.total!r}>'
+
+    def fetch(self, **kwargs: Any) -> Paginator[PlaylistTrack]:
+        return Paginator(self.playlist.read, max=self.total, **kwargs)
 
 class Playlist:
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
@@ -41,7 +54,7 @@ class Playlist:
         offset: int = 0, 
         market: Optional[str] = None, 
         fields: Optional[List[str]] = None, 
-        additional_types: Optional[List[str]] = None
+        additional_types: Optional[List[str]] = None,
     ) -> List[PlaylistTrack]:
         data = await self._http.get_playlist_items(
             id=self.id,
@@ -89,8 +102,7 @@ class Playlist:
 
     @property
     def external_urls(self):
-        spotify = self._data.get('external_urls', {}).get('spotify', None)
-        return ExternalURLs(spotify)
+        return ExternalURLs(self._data.get('external_urls', {}))
 
     @property
     def owner(self) -> PartialUser:
@@ -102,11 +114,8 @@ class Playlist:
 
     @property
     def followers(self):
-        return Followers(
-            href=self._data['followers']['href'],
-            total=self._data['followers']['total'],
-        )
+        return Followers(self._data['followers'])
 
     @property
-    def tracks(self) -> List[PlaylistTrack]:
-        return [PlaylistTrack(track, self._http) for track in self._data['tracks']['items']]
+    def tracks(self):
+        return PlaylistTracks(self, self._data['tracks'])

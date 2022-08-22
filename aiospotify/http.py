@@ -584,7 +584,7 @@ class HTTPClient:
         return await self.request(url, 'PUT', params=params)
 
     async def seek_to_position_in_currently_playing_track(self, position_ms: int, device_id: Optional[str] = None):
-        params = {
+        params: Dict[str, Any] = {
             'position_ms': position_ms
         }
 
@@ -604,7 +604,7 @@ class HTTPClient:
         return await self.request('/me/player/repeat', 'PUT', params=params)
 
     async def set_volume_for_user_playback(self, volume_percentage: int, device_id: Optional[str] = None):
-        params = {
+        params: Dict[str, Any] = {
             'volume_percentage': volume_percentage
         }
 
@@ -614,7 +614,7 @@ class HTTPClient:
         return await self.request('/me/player/volume', 'PUT', params=params)
 
     async def toggle_shuffle_for_user_playback(self, state: bool, device_id: Optional[str] = None):
-        params = {
+        params: Dict[str, Any] = {
             'state': state
         }
 
@@ -679,9 +679,9 @@ class HTTPClient:
         fields: Optional[List[str]] = None, 
         additional_types: Optional[List[str]] = None
     ):
-        additional_types = ','.join(additional_types or ['track'])
+        types = ','.join(additional_types or ['track'])
         params = {
-            'additional_types': additional_types
+            'additional_types': types
         }
 
         if market:

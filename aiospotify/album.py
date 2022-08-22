@@ -16,19 +16,11 @@ class Album(PartialAlbum):
 
     @property
     def external_ids(self):
-        ids = self._data.get('external_ids', {})
-        return ExternalIDs(
-            ean=ids.get('ean'),
-            isrc=ids.get('isrc'),
-            upc=ids.get('upc'),
-        )
+        return ExternalIDs(self._data['external_ids'])
 
     @property
     def copyrights(self) -> List[Copyright]:
-        return [
-            Copyright(text=data['text'], type=data['type'])
-            for data in self._data['copyrights']
-        ]
+        return [Copyright(copyright) for copyright in self._data['copyrights']]
 
     @property
     def tracks(self) -> List[PartialTrack]:

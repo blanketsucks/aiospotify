@@ -63,7 +63,7 @@ class SpotifyClient:
 
     @classmethod
     def from_token(cls, token: str, **kwargs) -> SpotifyClient:
-        self = cls(None, None, **kwargs) # type: ignore
+        self = cls('', '', **kwargs)
 
         self.http.auth.token = token
         return self
@@ -109,7 +109,7 @@ class SpotifyClient:
         offset: int = 0, 
         market: Optional[str] = None
     ) -> SearchResult:
-        types = types or [ObjectType.TRACK, ObjectType.ALBUM, ObjectType.ARTIST]
+        types = types or [ObjectType.Track, ObjectType.Album, ObjectType.Artist]
         values = ','.join([type.value for type in types])
 
         data = await self.http.search(query, values, limit=limit, offset=offset, market=market)

@@ -54,8 +54,7 @@ class PartialEpisode:
 
     @property
     def external_urls(self) -> ExternalURLs:
-        spotify = self._data.get('external_urls', {}).get('spotify', None)
-        return ExternalURLs(spotify)
+        return ExternalURLs(self._data.get('external_urls', {}))
 
 class PartialShow:
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
@@ -84,15 +83,11 @@ class PartialShow:
 
     @property
     def copyrights(self) -> List[Copyright]:
-        return [
-            Copyright(text=data['text'], type=data['type'])
-            for data in self._data['copyrights']
-        ]
+        return [Copyright(data) for data in self._data['copyrights']]
 
     @property
     def external_ids(self) -> ExternalURLs:
-        spotify = self._data.get('external_urls', {}).get('spotify', None)
-        return ExternalURLs(spotify)
+        return ExternalURLs(self._data.get('external_urls', {}))
     
 class PartialUser:
     def __init__(self, data: Dict[str, Any]) -> None:
@@ -104,8 +99,7 @@ class PartialUser:
 
     @property
     def external_urls(self):
-        spotify = self._data.get('external_urls', {}).get('spotify', None)
-        return ExternalURLs(spotify)
+        return ExternalURLs(self._data.get('external_urls', {}))
 
 class PartialTrack:
     def __init__(self, data: Dict[str, Any]) -> None:
@@ -129,10 +123,7 @@ class PartialTrack:
     @property
     def external_ids(self):
         ids = self._data.get('external_ids', {})
-        return ExternalIDs(
-            ean=ids.get('ean'),
-            isrc=ids.get('isrc'),
-            upc=ids.get('upc'),
+        return ExternalIDs(self._data.get('external_ids', {})
         )
 
     @property
@@ -151,8 +142,7 @@ class PartialArtist:
 
     @property
     def external_urls(self):
-        spotify = self._data.get('external_urls', {}).get('spotify', None)
-        return ExternalURLs(spotify)
+        return ExternalURLs(self._data.get('external_urls', {}))
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} name={self.name!r} id={self.id!r} uri={self.uri!r}>'
@@ -174,8 +164,7 @@ class PartialAlbum:
 
     @property
     def external_urls(self):
-        spotify = self._data.get('external_urls', {}).get('spotify', None)
-        return ExternalURLs(spotify)
+        return ExternalURLs(self._data['external_urls'])
 
     @property
     def release_date(self):

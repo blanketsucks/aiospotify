@@ -1,10 +1,22 @@
-from typing import Any, Callable, Coroutine, Generic, List, TypeVar
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Callable, Coroutine, Generic, List, Protocol, TypeVar, Generator
+from abc import ABC, abstractmethod
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 T = TypeVar('T')
+
+M = TypeVar('M')
 
 __all__ = (
     'Paginator',
 )
+
+class PaginatorCallback(Protocol, Generic[T]):
+    async def __call__(self, *args: Any, offset: int, limit: int) -> List[T]:
+        ...
 
 class EmptyPage(Exception):
     pass
@@ -12,7 +24,34 @@ class EmptyPage(Exception):
 class MaxReached(Exception):
     pass
 
-class Paginator(Generic[T]):
+class AbstractPaginator(ABC, Generic[T]):
+    items: List[T]
+
+    @abstractmethod
+    async def next(self) -> List[T]:
+        raise NotImplementedError
+
+    async def all(self) -> List[T]:
+        return [item async for item in self]
+
+    def __await__(self) -> Generator[None, None, List[T]]:
+        return self.all().__await__()
+
+    def __aiter__(self) -> Self:
+        return self
+
+    async def __anext__(self) -> T:
+        try:
+            if self.items:
+                return self.items.pop()
+
+            await self.next()
+            return self.items.pop()
+        except (EmptyPage, MaxReached):
+            raise StopAsyncIteration
+
+
+class Paginator(AbstractPaginator[T]):
     __slots__ = (
         'results', 
         'offset', 
@@ -24,7 +63,7 @@ class Paginator(Generic[T]):
     )
 
     def __init__(self, 
-        callback: Callable[..., Coroutine[Any, Any, List[T]]], 
+        callback: PaginatorCallback[T], 
         increment: int = 50,
         max: int = 200,
         *args: Any,
@@ -33,7 +72,7 @@ class Paginator(Generic[T]):
         if 0 > increment <= 100:
             raise ValueError('increment value must be between 1 and 100')
 
-        self.results: List[T] = []
+        self.items: List[T] = []
         self.offset = 0
         self.callback = callback
         self.increment = increment
@@ -45,13 +84,7 @@ class Paginator(Generic[T]):
         return f'<Paginator offset={self.offset} increment={self.increment} max={self.max}>'
 
     def __len__(self):
-        return len(self.results)
-
-    def __await__(self):
-        return self.all().__await__()
-
-    async def all(self) -> List[T]:
-        return [item async for items in self for item in items]
+        return len(self.items)
 
     async def next(self) -> List[T]:
         if self.offset >= self.max:
@@ -67,15 +100,6 @@ class Paginator(Generic[T]):
             raise EmptyPage
 
         self.offset += self.increment
-
-        self.results.extend(items)
+        self.items.extend(items)
+        
         return items
-
-    def __aiter__(self):
-        return self
-
-    async def __anext__(self) -> List[T]:
-        try:
-            return await self.next()
-        except (EmptyPage, MaxReached):
-            raise StopAsyncIteration

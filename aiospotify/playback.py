@@ -95,7 +95,7 @@ class UserPlayback:
 
     async def set_shuffle(self, state: ShuffleState, *, device: Optional[Device] = None) -> None:
         device_id = device.id if device else None
-        value = True if state is ShuffleState.ON else False
+        value = True if state is ShuffleState.On else False
 
         await self._http.toggle_shuffle_for_user_playback(value, device_id=device_id)
 

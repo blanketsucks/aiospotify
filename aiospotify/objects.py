@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Protocol
+from typing import Dict, NamedTuple, Optional, Protocol, Any
 
 __all__ = (
     'Followers',
@@ -8,21 +8,25 @@ __all__ = (
     'Object'
 )
 
-class Followers(NamedTuple):
-    href: Optional[str]
-    total: int
+class Followers:
+    def __init__(self, data: Dict[str, Any]):
+        self.href: Optional[str] = data.get('href')
+        self.total: int = data['total']
 
-class Copyright(NamedTuple):
-    text: str
-    type: str
+class Copyright:
+    def __init__(self, data: Dict[str, Any]):
+        self.text: str = data['text']
+        self.type: str = data['type']
 
-class ExternalURLs(NamedTuple):
-    spotify: str
+class ExternalURLs:
+    def __init__(self, data: Dict[str, Any]) -> None:
+        self.spotify: str = data['spotify']
 
-class ExternalIDs(NamedTuple):
-    ean: str
-    isrc: str
-    upc: str
+class ExternalIDs:
+    def __init__(self, data: Dict[str, Any]) -> None:
+        self.ean: str = data['ean']
+        self.isrc: str = data['isrc']
+        self.upc: str = data['upc']
 
 class Object(Protocol):
     uri: str

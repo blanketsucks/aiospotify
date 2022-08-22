@@ -2,7 +2,7 @@
 
 An async wrapper for the spotify web API.
 
-# Installation
+## Installation
 
 Installation is done via pip and git:
 
@@ -14,18 +14,7 @@ py -3 -m pip install git+https://github.com/blanketsucks/aiospotify.git
 python3 -m pip install git+https://github.com/blanketsucks/aiospotify.git
 ```
 
-# Building documentation
-
-Since documentation is not hosted anywhere and i don't plan on doing so, you'll have to host it yourself (if you want to of course).
-
-```bash
-pip install mkdocstrings
-git clone https://github.com/blanketsucks/aiospotify
-cd aiospotify
-mkdocs serve
-```
-
-# Basic Usage
+## Basic Usage
 
 ```py
 import asyncio
@@ -43,3 +32,7 @@ async def main():
 
 asyncio.run(main())
 ```
+
+## Documention
+
+No

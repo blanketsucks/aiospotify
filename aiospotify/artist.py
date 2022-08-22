@@ -34,7 +34,5 @@ class Artist(PartialArtist):
 
     @property
     def followers(self):
-        return Followers(
-            href=self._data['followers']['href'],
-            total=self._data['followers']['total'],
-        )
+        return Followers(self._data['followers'])
+
