@@ -1,19 +1,19 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple, Union
-from urllib.parse import urlparse
+from typing import List, Optional, Tuple
 import asyncio
 import aiohttp
 import sys
 import re
 
-from .http import HTTPClient
+from .http import HTTPClient, Authentication
 from .user import CurrentUser, User
 from .track import Track
 from .enums import ObjectType
 from .search import SearchResult
 from .playlist import Playlist
 from .show import Show
+from .album import Album
 
 __all__ = (
     'SpotifyClient',
@@ -71,6 +71,10 @@ class SpotifyClient:
     @property
     def loop(self):
         return self.http.loop
+
+    @property
+    def auth(self) -> Authentication:
+        return self.http.auth
 
     def parse_url(self, url: str) -> Tuple[str, str]:
         match = SPOTIFY_URL_REGEX.match(url)
@@ -154,6 +158,12 @@ class SpotifyClient:
         data = await self.http.get_show(id, market)
 
         return Show(data, self.http)
+
+    async def fetch_album(self, uri: str, *, market: Optional[str] = None) -> Album:
+        id = self.parse_argument(uri, type='album')
+        data = await self.http.get_album(id, market)
+
+        return Album(data, self.http)
 
     async def close(self):
         await self.http.session.close()

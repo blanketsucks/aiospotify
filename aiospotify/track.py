@@ -138,11 +138,13 @@ class TrackAudioAnalysis:
         self.tatums = [TrackAudioAnalysisTatum(tatum) for tatum in data['tatums']]
 
 class Track(PartialTrack):
+    __slots__ = PartialTrack.__slots__ + ('_http', 'is_playable', 'linked_from')
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         self._http = http
         super().__init__(data)
     
-        self.is_playable = data.get('is_playable', False)
+        self.is_playable: bool = data.get('is_playable', False)
         self.linked_from = PartialTrack(data['linked_from']) if data.get('linked_from') else None
 
     @property
@@ -158,6 +160,8 @@ class Track(PartialTrack):
         return TrackAudioAnalysis(data)
 
 class UserTrack(Track):
+    __slots__ = Track.__slots__ + ('added_at',)
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         super().__init__(data['track'], http)
         self.added_at = data['added_at']

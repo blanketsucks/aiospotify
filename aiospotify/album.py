@@ -9,6 +9,8 @@ __all__ = (
 )
 
 class Album(PartialAlbum):
+    __slots__ = PartialAlbum.__slots__ + ('popularity',)
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient):
         super().__init__(data, http)
 

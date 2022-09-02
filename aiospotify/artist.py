@@ -13,6 +13,8 @@ __all__ = (
 )
 
 class Artist(PartialArtist):
+    __slots__ = PartialArtist.__slots__ + ('_http', 'genres', 'popularity')
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         self._http = http
         super().__init__(data)

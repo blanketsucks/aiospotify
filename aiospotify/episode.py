@@ -4,6 +4,8 @@ from .http import HTTPClient
 from .partials import PartialEpisode, PartialShow
 
 class Episode(PartialEpisode):
+    __slots__ = PartialEpisode.__slots__ + ('is_playable', 'languages')
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         super().__init__(data, http)
 

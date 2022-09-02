@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from .http import HTTPClient
 from .enums import AlbumType, ObjectType, MediaType
 from .image import Image
-from .objects import Copyright, ExternalURLs, ExternalIDs
+from .objects import Copyright, ExternalURLs, ExternalIDs, IDComparable
+from .utils import cached_slot_property
 
 __all__ = (
     'PartialTrack',
@@ -18,6 +19,8 @@ __all__ = (
 )
 
 class ReleaseDate:
+    __slots__ = ('date', 'precision')
+
     def __init__(self, data: Dict[str, Any]) -> None:
         self.date: str = data['release_date']
         self.precision: str = data['release_date_precision'] 
@@ -25,7 +28,22 @@ class ReleaseDate:
     def __repr__(self) -> str:
         return '<ReleaseDate date={0.date!r} precision={0.precision!r}>'.format(self)
 
-class PartialEpisode:
+class PartialEpisode(IDComparable):
+    __slots__ = (
+        '_data',
+        '_http',
+        'audio_preview_url',
+        'description',
+        'duration_ms',
+        'href',
+        'id',
+        'is_externally_hosted',
+        'name',
+        'language',
+        'type',
+        'uri'
+    )
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         self._data = data
         self._http = http
@@ -56,7 +74,24 @@ class PartialEpisode:
     def external_urls(self) -> ExternalURLs:
         return ExternalURLs(self._data.get('external_urls', {}))
 
-class PartialShow:
+class PartialShow(IDComparable):
+    __slots__ = (
+        '_data',
+        '_http',
+        'available_markets',
+        'description',
+        'explicit',
+        'href',
+        'id',
+        'is_externally_hosted',
+        'languages',
+        'name',
+        'media_type',
+        'type',
+        'publisher',
+        'uri'
+    )
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         self._data = data
         self._http = http
@@ -89,7 +124,9 @@ class PartialShow:
     def external_ids(self) -> ExternalURLs:
         return ExternalURLs(self._data.get('external_urls', {}))
     
-class PartialUser:
+class PartialUser(IDComparable):
+    __slots__ = ('_data', 'href', 'id', 'type', 'uri', 'display_name')
+
     def __init__(self, data: Dict[str, Any]) -> None:
         self._data = data
         self.href: str = data['href']
@@ -97,15 +134,40 @@ class PartialUser:
         self.type = ObjectType(data['type'])
         self.uri: str = data['uri']
 
+        # display_name may not exist in some partial payloads
+        self.display_name: Optional[str] = data.get('display_name')
+
+    def __repr__(self) -> str:
+        if self.display_name is not None:
+            return f'<{self.__class__.__name__} id={self.id!r} display_name={self.display_name!r} uri={self.uri}>'
+        else:
+             return f'<{self.__class__.__name__} id={self.id!r} uri={self.uri}>'
+
     @property
     def external_urls(self):
         return ExternalURLs(self._data.get('external_urls', {}))
 
-class PartialTrack:
+class PartialTrack(IDComparable):
+    __slots__ = (
+        '_cs_artists'
+        '_data',
+        'available_markets',
+        'disc_number',
+        'duration',
+        'explicit',
+        'href',
+        'id',
+        'name',
+        'preview_url',
+        'track_number',
+        'type',
+        'uri'
+    )
+
     def __init__(self, data: Dict[str, Any]) -> None:
         self._data = data
 
-        self.avaliable_markets: List[str] = data['available_markets']
+        self.available_markets: List[str] = data['available_markets']
         self.disc_number: int = data['disc_number']
         self.duration: int = data['duration_ms']
         self.explicit: bool = data['explicit']
@@ -122,16 +184,16 @@ class PartialTrack:
     
     @property
     def external_ids(self):
-        ids = self._data.get('external_ids', {})
-        return ExternalIDs(self._data.get('external_ids', {})
-        )
+        return ExternalIDs(self._data.get('external_ids', {}))
 
-    @property
+    @cached_slot_property('_cs_artists')
     def artists(self) -> List[PartialArtist]:
         artists = self._data.get('artists', [])
         return [PartialArtist(artist) for artist in artists]
 
-class PartialArtist:
+class PartialArtist(IDComparable):
+    __slots__ = ('_data', 'href', 'id', 'name', 'type', 'uri')
+
     def __init__(self, data: Dict[str, Any]) -> None:
         self._data = data
         self.href: str = data['href']
@@ -147,7 +209,20 @@ class PartialArtist:
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} name={self.name!r} id={self.id!r} uri={self.uri!r}>'
 
-class PartialAlbum:
+class PartialAlbum(IDComparable):
+    __slots__ = (
+        '_cs_artists',
+        '_http',
+        '_data',
+        'album_type',
+        'type',
+        'available_markets',
+        'href',
+        'id',
+        'uri',
+        'name'
+    )
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         self._http = http
         self._data = data
@@ -174,7 +249,7 @@ class PartialAlbum:
     def images(self) -> List[Image]:
         return [Image(image, self._http) for image in self._data['images']]
 
-    @property
+    @cached_slot_property('_cs_artists')
     def artists(self) -> List[PartialArtist]:
         return [PartialArtist(artist) for artist in self._data['artists']]
 

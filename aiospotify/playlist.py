@@ -13,6 +13,8 @@ from .paginator import Paginator
 __all__ = ('PlaylistTrack', 'Playlist')
 
 class PlaylistTrack(Track):
+    __slots__ = Track.__slots__ + ('added_at', 'added_by', 'is_local')
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         super().__init__(data['track'], http)
         self.added_at = data['added_at']
@@ -20,6 +22,8 @@ class PlaylistTrack(Track):
         self.is_local: bool = data['is_local']
 
 class PlaylistTracks:
+    __slots__ = ('playlist', 'href', 'total')
+
     def __init__(self, playlist: Playlist, data: Dict[str, Any]) -> None:
         self.playlist = playlist
         self.href: str = data['href']
@@ -32,6 +36,18 @@ class PlaylistTracks:
         return Paginator(self.playlist.read, max=self.total, **kwargs)
 
 class Playlist:
+    __slots__ = (
+        '_data', 
+        '_http', 
+        'collaborative',
+        'description',
+        'href',
+        'id',
+        'name',
+        'public',
+        'snapshot_id',
+    )
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         self._data = data
         self._http = http
@@ -75,7 +91,7 @@ class Playlist:
         public: Optional[bool] = None, 
         collaborative: Optional[bool] = None
     ) -> None:
-        await self._http.change_playlist_details(
+        data = await self._http.change_playlist_details(
             id=self.id,
             name=name,
             description=description,
@@ -92,13 +108,15 @@ class Playlist:
         items = items or []
         uris = [item.uri for item in items]
 
-        await self._http.add_items_to_playlist(id=self.id, uris=uris, position=position)
+        data = await self._http.add_items_to_playlist(id=self.id, uris=uris, position=position)
+        self.snapshot_id = data['snapshot_id']
 
     async def remove_tracks(self, tracks: Optional[Sequence[Object]] = None) -> None:
         tracks = tracks or []
         items = [{'uri': track.uri} for track in tracks]
 
-        await self._http.remove_items_from_playlist(id=self.id, tracks=items)
+        data = await self._http.remove_items_from_playlist(id=self.id, tracks=items)
+        self.snapshot_id = data['snapshot_id']
 
     @property
     def external_urls(self):

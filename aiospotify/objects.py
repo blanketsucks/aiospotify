@@ -1,4 +1,4 @@
-from typing import Dict, NamedTuple, Optional, Protocol, Any
+from typing import Dict, Optional, Protocol, Any
 
 __all__ = (
     'Followers',
@@ -30,3 +30,13 @@ class ExternalIDs:
 
 class Object(Protocol):
     uri: str
+    id: str
+
+class IDComparable:
+    id: str
+
+    def __eq__(self, other: Any):
+        if not isinstance(other, self.__class__):
+            return False
+        
+        return self.id == other.id

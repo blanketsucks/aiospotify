@@ -18,7 +18,7 @@ class ObjectType(Enum):
 class AlbumType(Enum):
     Album = 'album'
     Single = 'single'
-    Composition = 'compilation'
+    Compilation = 'compilation'
 
 class MediaType(Enum):
     Audio = 'audio'

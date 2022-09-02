@@ -1,16 +1,15 @@
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
-from .http import HTTPClient
 from .episode import Episode
 from .partials import PartialShow, PartialEpisode
+from .utils import cached_slot_property
 
 __all__ = ('Show',)
 
 class Show(PartialShow):
-    def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
-        super().__init__(data, http)
+    __slots__ = PartialShow.__slots__ + ('_cs_episodes',)
 
-    @property
+    @cached_slot_property('_cs_episodes')
     def episodes(self) -> List[PartialEpisode]:
         return [PartialEpisode(item, self._http) for item in self._data['episodes']['items']]
 

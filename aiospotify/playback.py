@@ -32,7 +32,7 @@ class PlaybackContext:
         self.uri: str = data['uri']
         self.href: str = data['href']
 
-        self.external_urls = ExternalURLs(**data['external_urls'])
+        self.external_urls = ExternalURLs(data['external_urls'])
 
     def __repr__(self) -> str:
         return f'<PlaybackContext type={self.type!r} uri={self.uri!r}>'

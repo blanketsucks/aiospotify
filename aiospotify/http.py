@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 import aiohttp
 import asyncio
 import urllib.parse
@@ -9,11 +9,11 @@ from .errors import Forbidden, HTTPException, NotFound, Unauthorized, BadRequest
     
 class Authentication:
     __slots__ = (
+        '_refresh_token',
         'client_id',
         'client_secret',
         'session',
         'expires_at',
-        '_refresh_token',
         'token',
     )
 
@@ -25,8 +25,9 @@ class Authentication:
         self.session = session
 
         self.expires_at: Optional[datetime.datetime] = None
-        self._refresh_token: Optional[str] = None
         self.token: Optional[str] = None
+
+        self._refresh_token: Optional[str] = None
 
     def is_expired(self):
         if not self.expires_at:
@@ -63,9 +64,8 @@ class Authentication:
             'grant_type': 'client_credentials'
         }
 
-        token = self.build_basic_token()
         headers = {
-            'Authorization': 'Basic ' + token,
+            'Authorization': f'Basic {self.build_basic_token()}',
         }
 
         async with self.session.post(self.URL, headers=headers, data=data) as response:
@@ -73,6 +73,7 @@ class Authentication:
 
             self.expires_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=data['expires_in'])
             self.token = data['access_token']
+
             self._refresh_token = data.get('refresh_token')
 
         return self.token
@@ -88,6 +89,7 @@ class Authentication:
 
             self.expires_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=data['expires_in'])
             self.token = data['access_token']
+
             self._refresh_token = data.get('refresh_token')
         
         return self.token
@@ -107,7 +109,7 @@ class HTTPClient:
         self.loop = loop
         self.session = session or aiohttp.ClientSession(loop=self.loop)
         self.auth = Authentication(client_id, client_secret, self.session)
-        self.errors = {
+        self.errors: Dict[int, Type[HTTPException]] = {
             401: Unauthorized,
             403: Forbidden,
             404: NotFound,
@@ -147,7 +149,7 @@ class HTTPClient:
                 error = self.errors.get(response.status, HTTPException)
                 raise error(data)
 
-        raise RuntimeError('Unreachable code')
+        raise RuntimeError('Unreachable')
 
     async def search(
         self, query: str, type: str, market: Optional[str] = None, limit: int = 20, offset: int = 0
@@ -701,13 +703,13 @@ class HTTPClient:
     ):
         data = {}
 
-        if name:
+        if name is not None:
             data['name'] = name
         if public is not None:
             data['public'] = public
         if collaborative is not None:
             data['collaborative'] = collaborative
-        if description:
+        if description is not None:
             data['description'] = description
 
         return await self.request(f'/playlists/{id}', 'PUT', json=data)

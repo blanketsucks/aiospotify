@@ -15,14 +15,11 @@ __all__ = (
 )
 
 class User(PartialUser):
+    __slots__ = PartialUser.__slots__ + ('_http',)
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         self._http = http
         super().__init__(data)
-        
-        self.display_name: str = data['display_name']
-
-    def __repr__(self) -> str:
-        return f'<{self.__class__.__name__} display_name={self.display_name!r} id={self.id!r} uri={self.uri!r}>'
 
     async def create_playlist(
         self, 
@@ -59,6 +56,8 @@ class User(PartialUser):
         return Followers(self._data['followers'])
 
 class CurrentUser(User):
+    __slots__ = User.__slots__ + ('country', 'email', 'product')
+
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         super().__init__(data, http)
 
