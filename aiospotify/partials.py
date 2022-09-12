@@ -96,7 +96,7 @@ class PartialShow(IDComparable):
         self._data = data
         self._http = http
 
-        self.available_markets: List[str] = data['available_markets']
+        self.available_markets: List[str] = data.get('available_markets', [])
         self.description: str = data['description']
         self.explicit: bool = data['explicit']
         self.href: str = data['href']
