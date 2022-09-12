@@ -14,6 +14,7 @@ from .search import SearchResult
 from .playlist import Playlist
 from .show import Show
 from .album import Album
+from .artist import Artist
 
 __all__ = (
     'SpotifyClient',
@@ -164,6 +165,12 @@ class SpotifyClient:
         data = await self.http.get_album(id, market)
 
         return Album(data, self.http)
+
+    async def fetch_artist(self, uri: str) -> Artist:
+        id = self.parse_argument(uri, type='artist')
+        data = await self.http.get_artist(id)
+
+        return Artist(data, self.http)
 
     async def close(self):
         await self.http.session.close()
