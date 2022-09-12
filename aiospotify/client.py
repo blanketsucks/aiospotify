@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 import asyncio
 import aiohttp
 import sys
@@ -59,14 +59,14 @@ class SpotifyClient:
     async def __aenter__(self):
         return self
 
-    async def __aexit__(self, *args):
+    async def __aexit__(self, *args: Any):
         await self.close()
 
     @classmethod
-    def from_token(cls, token: str, **kwargs) -> SpotifyClient:
+    def from_token(cls, token: str, **kwargs: Any) -> SpotifyClient:
         self = cls('', '', **kwargs)
-
         self.http.auth.token = token
+
         return self
     
     @property

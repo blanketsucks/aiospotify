@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 from .http import HTTPClient
-from .partials import PartialArtist
+from .artist import Artist
 from .track import Track
 from .utils import cached_slot_property
 
@@ -25,11 +25,11 @@ class SearchResult:
         return f'<SearchResult artists={len(self.arists)} tracks={len(self.tracks)}>'
 
     @cached_slot_property('_cs_artists')
-    def arists(self) -> List[PartialArtist]:
+    def arists(self) -> List[Artist]:
         artists = self._data.get('artists', {})
         items = artists.get('items', [])
 
-        return [PartialArtist(artist) for artist in items]
+        return [Artist(artist, self._http) for artist in items]
 
     @cached_slot_property('_cs_tracks')
     def tracks(self) -> List[Track]:

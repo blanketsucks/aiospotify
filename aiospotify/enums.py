@@ -13,7 +13,7 @@ class ObjectType(Enum):
     Playlist = 'playlist'
     Artist = 'artist'
     Episode = 'episode'
-    SHOW = 'show'
+    Show = 'show'
 
 class AlbumType(Enum):
     Album = 'album'

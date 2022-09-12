@@ -252,5 +252,3 @@ class PartialAlbum(IDComparable):
     @cached_slot_property('_cs_artists')
     def artists(self) -> List[PartialArtist]:
         return [PartialArtist(artist) for artist in self._data['artists']]
-
-    
