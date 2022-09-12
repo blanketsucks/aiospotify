@@ -167,7 +167,7 @@ class PartialTrack(IDComparable):
     def __init__(self, data: Dict[str, Any]) -> None:
         self._data = data
 
-        self.available_markets: List[str] = data['available_markets']
+        self.available_markets: List[str] = data.get('available_markets', [])
         self.disc_number: int = data['disc_number']
         self.duration: int = data['duration_ms']
         self.explicit: bool = data['explicit']
