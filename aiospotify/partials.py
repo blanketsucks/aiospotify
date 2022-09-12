@@ -228,7 +228,7 @@ class PartialAlbum(IDComparable):
         self._data = data
         self.album_type = AlbumType(data['album_type']) 
         self.type = ObjectType(data['type'])
-        self.available_markets: List[str] = data['available_markets']
+        self.available_markets: List[str] = data.get('available_markets', [])
         self.href: str = data['href']
         self.id: str = data['id']
         self.uri: str = data['uri']
