@@ -38,5 +38,5 @@ class IDComparable:
     def __eq__(self, other: Any):
         if not isinstance(other, self.__class__):
             return False
-        
+
         return self.id == other.id

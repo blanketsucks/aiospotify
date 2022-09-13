@@ -111,7 +111,7 @@ class PartialShow(IDComparable):
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} name={self.name!r} id={self.id!r} uri={self.uri!r}>'
-    
+
     @property
     def images(self) -> List[Image]:
         return [Image(image, self._http) for image in self._data['images']]
@@ -123,7 +123,7 @@ class PartialShow(IDComparable):
     @property
     def external_ids(self) -> ExternalURLs:
         return ExternalURLs(self._data.get('external_urls', {}))
-    
+
 class PartialUser(IDComparable):
     __slots__ = ('_data', 'href', 'id', 'type', 'uri', 'display_name')
 
@@ -181,7 +181,7 @@ class PartialTrack(IDComparable):
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} name={self.name!r} id={self.id!r} uri={self.uri!r}>'
-    
+
     @property
     def external_ids(self):
         return ExternalIDs(self._data.get('external_ids', {}))

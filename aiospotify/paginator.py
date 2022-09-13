@@ -101,5 +101,5 @@ class Paginator(AbstractPaginator[T]):
 
         self.offset += self.increment
         self.items.extend(items)
-        
+
         return items

@@ -6,7 +6,7 @@ import base64
 import datetime
 
 from .errors import Forbidden, HTTPException, NotFound, Unauthorized, BadRequest
-    
+
 class Authentication:
     __slots__ = (
         '_refresh_token',
@@ -91,7 +91,7 @@ class Authentication:
             self.token = data['access_token']
 
             self._refresh_token = data.get('refresh_token')
-        
+
         return self.token
 
 class HTTPClient:
@@ -190,7 +190,7 @@ class HTTPClient:
         params = self.update_params(ids=values)
 
         return await self.request('/audio-features', 'GET', params=params)
-    
+
     async def get_track_audio_features(self, id: str):
         return await self.request(f'/audio-features/{id}', 'GET')
 
@@ -392,7 +392,7 @@ class HTTPClient:
         )
 
         return await self.request('/recommendations', 'GET', params=params)
-        
+
 
     async def get_recommendation_genres(self):
         return await self.request('/recommendations/available-genre-seeds', 'GET')
@@ -406,20 +406,20 @@ class HTTPClient:
     async def get_episode(self, id: int, market: Optional[str] = None):
         params = self.update_params(market=market)
         return await self.request(f'/episodes/{id}', 'GET', params=params)
-        
+
     async def follow_playlist(self, id: str, public: bool = True):
         payload = {'public': public}
         return await self.request(f'/playlists/{id}/followers', 'PUT', json=payload)
 
     async def unfollow_playlist(self, id: str):
         return await self.request(f'/playlists/{id}/followers', 'DELETE')
-    
+
     async def users_follow_playlist(self, playlist_id: str, ids: List[str]):
         values = ','.join(ids)
         params = self.update_params(ids=values)
 
         return await self.request(f'/playlists/{playlist_id}/followers/contains', 'GET', params=params)
-    
+
     async def get_user_followed_artists(self, after: Optional[str] = None, limit: int = 20):
         params = self.update_params(after=after, limit=limit, type='artist')
 
@@ -673,7 +673,7 @@ class HTTPClient:
             data['description'] = description
 
         return await self.request(f'/users/{user_id}/playlists', 'POST', json=data)
-        
+
     async def get_playlist(
         self, 
         id: str, 

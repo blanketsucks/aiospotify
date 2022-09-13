@@ -143,7 +143,7 @@ class Track(PartialTrack):
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         self._http = http
         super().__init__(data)
-    
+
         self.is_playable: bool = data.get('is_playable', False)
         self.linked_from = PartialTrack(data['linked_from']) if data.get('linked_from') else None
 

@@ -46,7 +46,7 @@ class User(PartialUser):
     @property
     def external_urls(self):
         return ExternalURLs(self._data.get('external_urls', {}))
-    
+
     @property
     def images(self) -> List[Image]:
         return [Image(i, self._http) for i in self._data['images']]
