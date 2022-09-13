@@ -30,7 +30,7 @@ class Image:
 
     def __repr__(self) -> str:
         return f'<Image url={self.url!r}>'
-    
+
     def __str__(self) -> str:
         return self.url
 
@@ -42,5 +42,5 @@ class Image:
         if isinstance(file, (str, os.PathLike)):
             with open(file, 'wb') as f:
                 return await _write(f, data)
-        
+
         return await _write(file, data)

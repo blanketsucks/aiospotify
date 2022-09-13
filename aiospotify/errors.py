@@ -31,4 +31,3 @@ class NotFound(HTTPException):
 
 class Unauthorized(HTTPException):
     pass
-        

@@ -68,7 +68,7 @@ class SpotifyClient:
         self.http.auth.token = token
 
         return self
-    
+
     @property
     def loop(self):
         return self.http.loop
@@ -81,7 +81,7 @@ class SpotifyClient:
         match = SPOTIFY_URL_REGEX.match(url)
         if not match:
             raise ValueError(f'{url!r} is not a valid spotify url')
-    
+
         return match.group('type'), match.group('id')
 
     def parse_uri(self, uri: str):
@@ -119,7 +119,7 @@ class SpotifyClient:
 
         data = await self.http.search(query, values, limit=limit, offset=offset, market=market)
         return SearchResult(data, self.http)
-        
+
     async def fetch_current_user(self) -> CurrentUser:
         data = await self.http.me()
         return CurrentUser(data, self.http)
@@ -153,7 +153,7 @@ class SpotifyClient:
 
         data = await self.http.get_shows(ids, market=market)
         return [Show(item, self.http) for item in data['items']]
-    
+
     async def fetch_show(self, uri: str, *, market: Optional[str] = None) -> Show:
         id = self.parse_argument(uri, type='show')
         data = await self.http.get_show(id, market)

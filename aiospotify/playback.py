@@ -74,7 +74,7 @@ class UserPlayback:
     @property
     def device(self) -> Device:
         return Device(self._data['device'])
-    
+
     async def fetch_devices(self) -> List[Device]:
         data = await self._http.get_user_devices()
         return [Device(device) for device in data['devices']]
@@ -106,7 +106,7 @@ class UserPlayback:
     async def transfer(self, devices: List[Device], *, play: Optional[bool] = None) -> None:
         device_ids = [device.id for device in devices]
         await self._http.transfer_user_playback(device_ids=device_ids, play=play)
-    
+
     async def queue(self, item: Union[PartialTrack, PartialEpisode], *, device: Optional[Device] = None) -> None:
         device_id = device.id if device else None
         await self._http.add_item_to_queue(item.uri, device_id=device_id)
