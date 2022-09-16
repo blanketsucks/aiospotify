@@ -1,7 +1,8 @@
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from .partials import PartialTrack, PartialAlbum
 from .http import HTTPClient
+from .image import Image
 
 __all__ = (
     'TrackAudioFeatures',
@@ -150,6 +151,10 @@ class Track(PartialTrack):
     @property
     def album(self) -> PartialAlbum:
         return PartialAlbum(self._data['album'], self._http)
+
+    @property
+    def image(self) -> Optional[Image]:
+        return self.album.images[0] if self.album.images else None
 
     async def fetch_audio_features(self) -> TrackAudioFeatures:
         data = await self._http.get_track_audio_features(self.id)
