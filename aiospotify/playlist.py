@@ -9,6 +9,7 @@ from .track import Track
 from .objects import Object
 from .partials import PartialUser
 from .paginator import Paginator
+from .utils import fromisoformat
 
 __all__ = ('PlaylistTrack', 'Playlist')
 
@@ -17,7 +18,7 @@ class PlaylistTrack(Track):
 
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         super().__init__(data['track'], http)
-        self.added_at = data['added_at']
+        self.added_at = fromisoformat(data['added_at'])
         self.added_by = PartialUser(data['added_by'])
         self.is_local: bool = data['is_local']
 
@@ -33,7 +34,7 @@ class PlaylistTracks:
         return f'<PlaylistTracks href={self.href!r} total={self.total!r}>'
 
     def fetch(self, **kwargs: Any) -> Paginator[PlaylistTrack]:
-        return Paginator(self.playlist.read, max=self.total, **kwargs)
+        return Paginator(self.playlist.read, max=self.total, **kwargs) # type: ignore
 
 class Playlist:
     __slots__ = (
@@ -91,7 +92,7 @@ class Playlist:
         public: Optional[bool] = None, 
         collaborative: Optional[bool] = None
     ) -> None:
-        data = await self._http.change_playlist_details(
+        await self._http.change_playlist_details(
             id=self.id,
             name=name,
             description=description,

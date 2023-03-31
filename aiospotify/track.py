@@ -3,6 +3,7 @@ from typing import Dict, Any, List, Optional
 from .partials import PartialTrack, PartialAlbum
 from .http import HTTPClient
 from .image import Image
+from .utils import fromisoformat
 
 __all__ = (
     'TrackAudioFeatures',
@@ -146,7 +147,9 @@ class Track(PartialTrack):
         super().__init__(data)
 
         self.is_playable: bool = data.get('is_playable', False)
-        self.linked_from = PartialTrack(data['linked_from']) if data.get('linked_from') else None
+        self.linked_from: Optional[PartialTrack] = (
+            PartialTrack(data['linked_from']) if data.get('linked_from') else None
+        )
 
     @property
     def album(self) -> PartialAlbum:
@@ -169,4 +172,4 @@ class UserTrack(Track):
 
     def __init__(self, data: Dict[str, Any], http: HTTPClient) -> None:
         super().__init__(data['track'], http)
-        self.added_at = data['added_at']
+        self.added_at = fromisoformat(data['added_at'])

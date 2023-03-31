@@ -13,6 +13,9 @@ class Followers:
         self.href: Optional[str] = data.get('href')
         self.total: int = data['total']
 
+    def __repr__(self) -> str:
+        return f'<Followers total={self.total!r}>'
+
 class Copyright:
     def __init__(self, data: Dict[str, Any]):
         self.text: str = data['text']
@@ -24,9 +27,9 @@ class ExternalURLs:
 
 class ExternalIDs:
     def __init__(self, data: Dict[str, Any]) -> None:
-        self.ean: str = data['ean']
-        self.isrc: str = data['isrc']
-        self.upc: str = data['upc']
+        self.ean: Optional[str] = data.get('ean')
+        self.isrc: Optional[str] = data.get('isrc')
+        self.upc: Optional[str] = data.get('upc')
 
 class Object(Protocol):
     uri: str

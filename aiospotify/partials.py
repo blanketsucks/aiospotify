@@ -141,7 +141,7 @@ class PartialUser(IDComparable):
         if self.display_name is not None:
             return f'<{self.__class__.__name__} id={self.id!r} display_name={self.display_name!r} uri={self.uri}>'
         else:
-             return f'<{self.__class__.__name__} id={self.id!r} uri={self.uri}>'
+             return f'<{self.__class__.__name__} id={self.id!r} uri={self.uri!r}>'
 
     @property
     def external_urls(self):
@@ -178,6 +178,8 @@ class PartialTrack(IDComparable):
         self.track_number: int = data['track_number']
         self.type = ObjectType(data['type'])
         self.uri: str = data['uri']
+        self.is_local: bool = data['is_local']
+        self.popularity: int = data['popularity']
 
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} name={self.name!r} id={self.id!r} uri={self.uri!r}>'

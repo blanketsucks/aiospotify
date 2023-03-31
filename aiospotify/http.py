@@ -31,7 +31,7 @@ class Authentication:
 
     def is_expired(self):
         if not self.expires_at:
-            return True
+            return False
 
         return datetime.datetime.utcnow() > self.expires_at
 
